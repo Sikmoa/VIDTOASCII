@@ -2,376 +2,563 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Emoji Video Converter</title>
+<title>EMOJI_ENGINE_PRO_v4.5_ULTRA</title>
+
 <style>
-body {
-  background: black;
-  color: white;
-  text-align: center;
-  font-family: monospace;
+:root {
+  --neon-pink:#ff0055;
+  --neon-cyan:#00f2ff;
+  --terminal-green:#00ff41;
+  --bg-black:#050505;
+  --panel-border:#222;
 }
-canvas {
-  border: 1px solid white;
-  display: block;
-  margin: 0 auto;
+
+body{
+  background:var(--bg-black);
+  color:#fff;
+  font-family:monospace;
+  margin:0;
 }
-button {
-  padding: 10px;
-  margin: 10px;
-  font-size: 16px;
+
+.app-container{
+  max-width:1400px;
+  margin:20px auto;
+  padding:20px;
+  border:1px solid var(--panel-border);
+  background:#0a0a0a;
 }
-video {
-  display: block;
-  margin: 10px auto;
-  max-width: 80%;
+
+.sidebar-layout{
+  display:grid;
+  grid-template-columns:350px 1fr;
+  gap:20px;
+  align-items:start;
 }
+
+.controls-panel{
+  border-right:1px solid var(--panel-border);
+  padding-right:15px;
+}
+
+.control-item{margin-bottom:15px;}
+
+select,input,button{
+  width:100%;
+  background:#111;
+  border:1px solid #333;
+  color:var(--neon-cyan);
+  padding:8px;
+  margin-top:5px;
+}
+
+canvas{
+  display:block;
+  width:100%;
+  border:1px solid #222;
+  background:#000;
+  image-rendering:pixelated;
+}
+
+#emojiCanvas{
+  height:auto;
+}
+
+#visualizerCanvas{
+  height:120px;
+  margin-top:10px;
+}
+
+video{display:none;}
+.warning{color:var(--neon-pink);font-size:0.7rem;}
 </style>
 </head>
 <body>
 
-<h2>Emoji Video Converter</h2>
+<div class="app-container">
+<h2>> EMOJI_ENGINE_ULTRA_v4.5</h2>
 
-<label>Emoji Size: <span id="resLabel">12px</span></label><br>
-<input type="range" id="resSlider" min="6" max="48" step="2" value="12"><br><br>
+<div class="sidebar-layout">
 
-<label>Emoji Range:</label>
+<div class="controls-panel">
+
+<div class="control-item">
+<label>Video Source</label>
+<input type="file" id="videoUpload" accept="video/*">
+</div>
+
+<div class="control-item">
+<label>Pixel Density: <span id="resLabel">12px</span></label>
+<input type="range" id="resSlider" min="4" max="50" step="2" value="12">
+<div id="resWarning" class="warning" style="display:none">
+⚠ 4px mode is extremely laggy
+</div>
+</div>
+
+<div class="control-item">
+<label>Mapping Algorithm</label>
 <select id="emojiMode">
-  <option value="bw">Black & White Squares</option>
-  <option value="ascii">ASCII (95 chars)</option>
-  <option value="full">All Emojis</option>
+<option value="full">FULL_EMOJI_MATRIX ⚠ (Very Laggy)</option>
+<option value="ascii">ASCII_CLASSIC</option>
+<option value="bw">BINARY_SQUARES</option>
+<option value="glitch">GLITCH_CORE</option>
+<option value="thermal">THERMAL_SIGHT</option>
+<option value="ascii_blur">ASCII_BLUR</option>
 </select>
-<br><br>
+</div>
 
-<label>
-  <input type="checkbox" id="bgToggle" checked> Show Original Video Background
-</label>
-<br><br>
+<div class="control-item">
+<label>Color Profile</label>
+<select id="colorProfile">
+<option value="source">SOURCE</option>
+<option value="matrix">MATRIX</option>
+<option value="cyber">CYBER</option>
+<option value="mono">MONO</option>
+</select>
+</div>
 
-<input type="file" id="videoUpload" accept="video/*"><br>
-<video id="video" controls></video>
+<button id="playBtn">RUN_ENGINE</button>
+<button id="exportBtn">EXPORT</button>
+<button id="fullscreenBtn">FULLSCREEN</button>
+
+</div>
+
+<div>
+
 <canvas id="emojiCanvas"></canvas>
-<br>
-<button id="playBtn">Play</button>
-<button id="exportBtn">Export Full Video (HQ)</button>
-<a id="downloadBtn" style="display:none; padding:10px; margin:10px; background:#444; color:white; text-decoration:none;">Download Emoji Video</a>
-<button id="fullscreenBtn">Fullscreen</button>
-<br>
-<progress id="progressBar" value="0" max="100" style="width:80%; display:none;"></progress>
+<video id="video"></video>
+
+<canvas id="visualizerCanvas"></canvas>
+
+<div style="margin-top:10px;">
+<button id="toggleAudioSource">Use Video Audio</button>
+<input type="file" id="audioUpload" accept="audio/*">
+<input type="color" id="visColor" value="#00f2ff">
+<button id="toggleRainbow">Rainbow OFF</button>
+<label>Rainbow Speed</label>
+<input type="range" id="rainbowSpeed" min="1" max="30" value="8">
+
+<hr>
+
+<select id="visType">
+<option value="bars">Bars</option>
+<option value="circle">Circle</option>
+<option value="wave">Wave</option>
+<option value="energy">Energy</option>
+</select>
+
+<label>Bass</label>
+<input type="range" id="bassGain" min="0" max="2" step="0.1" value="1">
+
+<label>Mid</label>
+<input type="range" id="midGain" min="0" max="2" step="0.1" value="1">
+
+<label>Treble</label>
+<input type="range" id="trebleGain" min="0" max="2" step="0.1" value="1">
+
+<label>Warmth (120Hz)</label>
+<input type="range" id="warmthGain" min="-12" max="12" step="1" value="0">
+
+<label>Reduce Mud (350Hz)</label>
+<input type="range" id="mudGain" min="-12" max="12" step="1" value="0">
+
+<label>Presence (2.5kHz)</label>
+<input type="range" id="presenceGain" min="-12" max="12" step="1" value="0">
+
+<label>Air (8kHz)</label>
+<input type="range" id="airGain" min="-12" max="12" step="1" value="0">
+</div>
+
+</div>
+</div>
+</div>
 
 <script>
-const video = document.getElementById("video");
-const upload = document.getElementById("videoUpload");
-const canvas = document.getElementById("emojiCanvas");
-const ctx = canvas.getContext("2d");
-const playBtn = document.getElementById("playBtn");
-const exportBtn = document.getElementById("exportBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const fullscreenBtn = document.getElementById("fullscreenBtn");
-const resSlider = document.getElementById("resSlider");
-const resLabel = document.getElementById("resLabel");
-const emojiMode = document.getElementById("emojiMode");
-const bgToggle = document.getElementById("bgToggle");
-const progressBar = document.getElementById("progressBar");
 
-let mediaRecorder;
-let recordedChunks = [];
-let emojiFrames = [];
-let cachedSettings = {};
-let isPlaying = false;
+/* ================= BASIC ENGINE ================= */
 
-const ASCII_SET = Array.from({length: 95}, (_, i) => String.fromCharCode(32 + i));
-const BW_SET = ["⬛","⬜"];
-const FULL_SET = [
-...ASCII_SET,
+const video=document.getElementById("video");
+const canvas=document.getElementById("emojiCanvas");
+const ctx=canvas.getContext("2d",{alpha:false});
+const visCanvas=document.getElementById("visualizerCanvas");
+const vCtx=visCanvas.getContext("2d");
 
-// Blocks & Shapes
-"⬛","⬜","🟥","🟧","🟨","🟩","🟦","🟪",
-"🔴","🟠","🟡","🟢","🔵","🟣",
-"⚫","⚪","🟤","🔶","🔷","🔸","🔹","🔺","🔻",
-"💠","🔘","🔳","🔲",
+const upload=document.getElementById("videoUpload");
+const resSlider=document.getElementById("resSlider");
+const resLabel=document.getElementById("resLabel");
+const resWarning=document.getElementById("resWarning");
+const emojiMode=document.getElementById("emojiMode");
+const colorProfile=document.getElementById("colorProfile");
 
-// Faces (Full Range)
-"😀","😃","😄","😁","😆","😅","😂","🤣","🥲","☺",
-"😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗",
-"😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓",
-"😎","🥸","🤩","🥳","😏","😒","😞","😔","😟","😕",
-"🙁","☹","😣","😖","😫","😩","🥺","😭","😤","😠",
-"😡","🤬","😶","😐","😑","🫠","🫥","🤔","🤭","🫢",
-"🤫","🤥","😬","😴","🥱","😪","😵","🤯","😱","🥵",
-"🥶","😳","🤠","🥴","🤢","🤮","🤧","😷","🤒","🤕",
+let isPlaying=false;
+let lastFrameData=null;
+let currentFontSize=null;
 
-// Hands & People
-"👍","👎","👏","🙌","👐","🤲","🤝","✌","🤞","🤟",
-"👌","👈","👉","👆","👇","✋","🤚","🖐","🖖",
-"💪","🦾","🦿","🦵","🦶",
-"👶","🧒","👦","👧","🧑","👨","👩","🧔","👴","👵",
+/* PERFORMANCE CAPS */
+const MAX_INTERNAL_WIDTH = 480;   // huge performance boost
+const TARGET_FPS = 30;
+const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
-// Hearts & Energy
-"❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎",
-"💔","❣","💕","💞","💓","💗","💖","💘","💝",
-"✨","⭐","🌟","💫","🔥","💥","⚡","💢","💨",
+/* EMOJIS */
+const ASCII_SET=Array.from({length:95},(_,i)=>String.fromCharCode(32+i));
+const BW_SET=["⬛","⬜"];
+const GLITCH_SET=["?","!","@","#","$","%","X","0","1"];
+const THERMAL_SET=["🟦","🟩","🟨","🟧","🟥"];
+const FULL_SET=["⬛","⬜","🟥","🟧","🟨","🟩","🟦","🔥","✨","🌑","🌕"];
 
-// Nature
-"🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘",
-"☀","🌤","⛅","🌥","☁","🌧","⛈","🌩","🌪",
-"🌈","❄","🌊","🌋","🌍","🌎","🌏",
-"🌱","🌲","🌳","🌴","🌵","🌸","🌼","🌻","🌺","🌷",
+/* OFFSCREEN */
+const offCanvas=new OffscreenCanvas(1,1);
+const offCtx=offCanvas.getContext("2d",{willReadFrequently:true});
 
-// Animals
-"🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐻‍❄️","🐨",
-"🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🦅",
-"🦆","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐞","🦋",
-"🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦀","🐡","🐠",
+/* VIDEO LOAD */
+upload.onchange=e=>{
+video.src=URL.createObjectURL(e.target.files[0]);
 
-// Food
-"🍎","🍊","🍋","🍌","🍉","🍇","🍓","🍒","🍍","🥭",
-"🍔","🍕","🌭","🍟","🍗","🥓","🍩","🍪","🍫","🍿",
-"🍣","🍜","🍤","🥟","🍦","🍰","🎂","🧁","🥤","☕",
+video.onloadedmetadata=()=>{
 
-// Objects & Tech
-"📱","💻","⌚","🖥","🖨","🕹","🎮","🎧","📷","📸",
-"🎥","📺","📡","💾","💿","📀","🔋","🔌","💡","🕯",
-"⚙","🛠","🔧","🔨","🧱","🪨","💎","🔒","🔑","🗝",
+const scale=Math.min(1,MAX_INTERNAL_WIDTH/video.videoWidth);
 
-// Transport
-"🚗","🚕","🚙","🏎","🚓","🚑","🚒","🚜",
-"🚀","✈","🛸","🚁","🚲","🛴","🚂","🚆",
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
 
-// Games & Fun
-"🎮","🎲","🎯","🎳","🎪","🎭","🎨","🎤","🎧","🥁",
-"🎸","🎹","🎺","🎷","🎻","🎬","🎰","🧩",
+offCanvas.width=Math.floor(video.videoWidth*scale);
+offCanvas.height=Math.floor(video.videoHeight*scale);
 
-// Random Chaos
-"🧠","👁","🦷","🩸","🧬","🧪","🧫","🧯",
-"🧲","🧿","🪬","⚔","🛡","🏆","🥇","🥈","🥉",
-"🎉","🎊","🎁","🎈","🪩"
-];
-const offCanvas = document.createElement("canvas");
-const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
-const sampleCanvas = document.createElement("canvas");
-const sampleCtx = sampleCanvas.getContext("2d", { willReadFrequently: true });
+visCanvas.width=canvas.width;
+visCanvas.height=120;
 
+lastFrameData=null;
+};
+};
 
-upload.addEventListener("change", () => {
-  const file = upload.files[0];
-  if (file) {
-    video.src = URL.createObjectURL(file);
-    video.load();
-    video.onloadedmetadata = () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      offCanvas.width = video.videoWidth;
-      offCanvas.height = video.videoHeight;
-    };
-    emojiFrames = [];
-    downloadBtn.style.display = 'none';
-  }
-});
+/* RESOLUTION */
+resSlider.oninput=()=>{
+resLabel.textContent=resSlider.value+"px";
+resWarning.style.display=resSlider.value<=4?"block":"none";
+lastFrameData=null;
+};
 
-resSlider.addEventListener("input", () => {
-  resLabel.textContent = resSlider.value + "px";
-  emojiFrames = [];
-  previousFrame = null;
-});
+/* ================= RENDER ================= */
 
-emojiMode.addEventListener("change", () => {
-  emojiFrames = [];
-  previousFrame = null;
-});
-bgToggle.addEventListener("change", () => {
-  emojiFrames = [];
-  previousFrame = null;
-});
+function render(size){
 
-fullscreenBtn.addEventListener("click", () => {
-  if (!document.fullscreenElement) canvas.requestFullscreen();
-  else document.exitFullscreen();
-});
+if(!video.videoWidth) return;
 
-function getEmojiSet() {
-  if (emojiMode.value === "bw") return BW_SET;
-  if (emojiMode.value === "ascii") return ASCII_SET;
-  return FULL_SET;
+/* protect heavy mode */
+if(size <= 6 && emojiMode.value === "full"){
+  emojiMode.value = "ascii";
 }
 
+/* calculate internal scale */
+const scale = Math.min(1, MAX_INTERNAL_WIDTH / video.videoWidth);
 
-function renderEmojiFrame(emojiSize) {
-  const width = video.videoWidth;
-  const height = video.videoHeight;
+const internalWidth  = Math.floor(video.videoWidth * scale);
+const internalHeight = Math.floor(video.videoHeight * scale);
 
-  const cols = Math.floor(width / emojiSize);
-  const rows = Math.floor(height / emojiSize);
+/* number of cells */
+const cols = Math.floor(internalWidth / size);
+const rows = Math.floor(internalHeight / size);
 
-  // Resize sample canvas to emoji grid size
-  sampleCanvas.width = cols;
-  sampleCanvas.height = rows;
+/* resize offscreen to grid size */
+if(offCanvas.width !== cols || offCanvas.height !== rows){
+  offCanvas.width = cols;
+  offCanvas.height = rows;
+}
 
-  // Downscale video frame to tiny canvas
-  sampleCtx.drawImage(video, 0, 0, cols, rows);
+/* draw video into grid-sized buffer */
+offCtx.drawImage(video, 0, 0, cols, rows);
 
-  const frame = sampleCtx.getImageData(0, 0, cols, rows).data;
+const imageData = offCtx.getImageData(0,0,cols,rows);
+const data = new Uint32Array(imageData.data.buffer);
 
-  ctx.font = emojiSize + "px monospace";
+/* ===== MODE + SCALING FIX ===== */
+
+/* how much grid maps to canvas */
+const cellWidth  = canvas.clientWidth  / cols;
+const cellHeight = canvas.clientHeight / rows;
+
+/* font must match cell */
+const fontSize = Math.floor(cellHeight);
+
+if(currentFontSize !== fontSize){
+  ctx.font = fontSize + "px monospace";
   ctx.textBaseline = "top";
+  currentFontSize = fontSize;
+}
 
-  const EMOJIS = getEmojiSet();
+/* clear once */
+ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
+if(emojiMode.value === "ascii_blur"){
+  ctx.globalAlpha = 0.25;
+}
 
-      const idx = (y * cols + x) * 4;
+for(let i=0;i<data.length;i++){
 
-      const r = frame[idx];
-      const g = frame[idx + 1];
-      const b = frame[idx + 2];
+  const x = i % cols;
+  const y = (i / cols) | 0;
 
-      const brightness = (r + g + b) / 3;
+  const p = data[i];
+  const r = p & 255;
+  const g = (p >> 8) & 255;
+  const b = (p >> 16) & 255;
 
-      const drawX = x * emojiSize;
-      const drawY = y * emojiSize;
+  const bright = (r*0.299 + g*0.587 + b*0.114);
+  const norm = bright / 255;
 
-      if (emojiMode.value === "bw") {
-        if (brightness < 128) {
-          ctx.fillStyle = "black";
-          ctx.fillText("⬛", drawX, drawY);
-        } else {
-          const gray = brightness | 0;
-          ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
-          ctx.fillText("⬜", drawX, drawY);
-        }
-      } else {
-        const emojiIdx = Math.min(
-          EMOJIS.length - 1,
-          (brightness * EMOJIS.length / 256) | 0
-        );
+  let char;
 
-        ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.fillText(EMOJIS[emojiIdx], drawX, drawY);
-      }
+  switch(emojiMode.value){
+
+    case "ascii":
+    case "ascii_blur": {
+      const idx = Math.floor(norm * (ASCII_SET.length - 1));
+      char = ASCII_SET[idx];
+      break;
+    }
+
+    case "bw": {
+      char = norm > 0.5 ? BW_SET[1] : BW_SET[0];
+      break;
+    }
+
+    case "glitch": {
+      const shift = (Math.random() * 0.25);
+      const idx = Math.floor(
+        Math.abs((norm + shift) % 1) * (GLITCH_SET.length - 1)
+      );
+      char = GLITCH_SET[idx];
+      break;
+    }
+
+    case "thermal": {
+      if(norm < 0.2) char = THERMAL_SET[0];
+      else if(norm < 0.4) char = THERMAL_SET[1];
+      else if(norm < 0.6) char = THERMAL_SET[2];
+      else if(norm < 0.8) char = THERMAL_SET[3];
+      else char = THERMAL_SET[4];
+      break;
+    }
+
+    default: { /* FULL */
+      const idx = Math.floor(norm * (FULL_SET.length - 1));
+      char = FULL_SET[idx];
     }
   }
+
+  /* color profile */
+  ctx.fillStyle =
+    colorProfile.value === "matrix" ? `rgb(0,${bright},0)` :
+    colorProfile.value === "cyber"  ? `rgb(${bright},0,${bright*0.6})` :
+    colorProfile.value === "mono"   ? `rgb(${bright},${bright},${bright})` :
+    `rgb(${r},${g},${b})`;
+
+  ctx.fillText(char, x * cellWidth, y * cellHeight);
 }
-function previewLoop() {
-  if (!isPlaying) return;
 
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+ctx.globalAlpha = 1;
+}
+/* ================= FPS THROTTLED ENGINE LOOP ================= */
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+let lastTime=0;
 
-if (bgToggle.checked) {
-  ctx.drawImage(video, 0, 0);
+function engineLoop(timestamp){
+
+if(timestamp-lastTime>FRAME_INTERVAL){
+
+if(isPlaying && !video.paused && !video.ended){
+render(parseInt(resSlider.value));
 }
 
-
-  renderEmojiFrame(parseInt(resSlider.value));
-  requestAnimationFrame(previewLoop);
+lastTime=timestamp;
 }
-exportBtn.addEventListener("click", async () => {
-  if (!video.src) return alert("Upload a video first!");
 
-  exportBtn.disabled = true;
-  exportBtn.textContent = "Recording...";
+requestAnimationFrame(engineLoop);
+}
 
-  const emojiSize = parseInt(resSlider.value);
-  const SCALE = 2;
-  const FPS = 60;
+/* ================= AUDIO + VISUALIZER ================= */
+/* (unchanged except small optimization) */
 
-  const originalWidth = video.videoWidth;
-  const originalHeight = video.videoHeight;
+let audioCtx;
+let analyser;
+let source;
+let dataArray;
 
-  // Resize canvas for HQ
-  canvas.width = originalWidth * SCALE;
-  canvas.height = originalHeight * SCALE;
+let bassFilter, midFilter, trebleFilter;
+let warmthFilter, mudFilter, presenceFilter, airFilter;
 
-  offCanvas.width = originalWidth;
-  offCanvas.height = originalHeight;
+const visType=document.getElementById("visType");
+const visColor=document.getElementById("visColor");
 
-  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-  ctx.imageSmoothingEnabled = false;
+const bassGain=document.getElementById("bassGain");
+const midGain=document.getElementById("midGain");
+const trebleGain=document.getElementById("trebleGain");
 
-  const stream = canvas.captureStream(FPS);
+const warmthGain=document.getElementById("warmthGain");
+const mudGain=document.getElementById("mudGain");
+const presenceGain=document.getElementById("presenceGain");
+const airGain=document.getElementById("airGain");
 
-  const recorder = new MediaRecorder(stream, {
-    mimeType: "video/webm",
-    videoBitsPerSecond: 20000000
-  });
+function initAudio(){
+if(audioCtx) return;
 
-  const chunks = [];
-  recorder.ondataavailable = e => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
+audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+analyser=audioCtx.createAnalyser();
+analyser.fftSize=256;
 
- recorder.onstop = () => {
-  const blob = new Blob(chunks, { type: "video/webm" });
-  const url = URL.createObjectURL(blob);
+dataArray=new Uint8Array(analyser.frequencyBinCount);
+}
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "emoji-video-HQ.webm";
-  a.click();
+function connectSource(mediaElement){
 
-  URL.revokeObjectURL(url);
+initAudio();
+if(source) source.disconnect();
 
-  // FULL reset
-  canvas.width = originalWidth;
-  canvas.height = originalHeight;
+source=audioCtx.createMediaElementSource(mediaElement);
 
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.imageSmoothingEnabled = false;
+/* filters */
+warmthFilter=audioCtx.createBiquadFilter();
+warmthFilter.type="lowshelf";
+warmthFilter.frequency.value=120;
 
-  previousFrame = null;
-  isPlaying = false;
+mudFilter=audioCtx.createBiquadFilter();
+mudFilter.type="peaking";
+mudFilter.frequency.value=350;
+mudFilter.Q.value=1.2;
 
-  exportBtn.disabled = false;
-  exportBtn.textContent = "Export Full Video (HQ)";
+presenceFilter=audioCtx.createBiquadFilter();
+presenceFilter.type="peaking";
+presenceFilter.frequency.value=2500;
+presenceFilter.Q.value=1.0;
+
+airFilter=audioCtx.createBiquadFilter();
+airFilter.type="highshelf";
+airFilter.frequency.value=8000;
+
+bassFilter=audioCtx.createBiquadFilter();
+bassFilter.type="lowshelf";
+bassFilter.frequency.value=200;
+
+midFilter=audioCtx.createBiquadFilter();
+midFilter.type="peaking";
+midFilter.frequency.value=1000;
+
+trebleFilter=audioCtx.createBiquadFilter();
+trebleFilter.type="highshelf";
+trebleFilter.frequency.value=3000;
+
+source
+.connect(warmthFilter)
+.connect(mudFilter)
+.connect(presenceFilter)
+.connect(airFilter)
+.connect(bassFilter)
+.connect(midFilter)
+.connect(trebleFilter)
+.connect(analyser)
+.connect(audioCtx.destination);
+
+updateEQ();
+}
+
+function updateEQ(){
+if(!bassFilter) return;
+
+bassFilter.gain.value=bassGain.value*10-10;
+midFilter.gain.value=midGain.value*10-10;
+trebleFilter.gain.value=trebleGain.value*10-10;
+
+warmthFilter.gain.value=warmthGain.value;
+mudFilter.gain.value=mudGain.value;
+presenceFilter.gain.value=presenceGain.value;
+airFilter.gain.value=airGain.value;
+}
+
+[bassGain,midGain,trebleGain,
+warmthGain,mudGain,presenceGain,airGain]
+.forEach(s=>s.oninput=updateEQ);
+
+/* Visualizer */
+function drawVisualizer(){
+
+if(!analyser){
+requestAnimationFrame(drawVisualizer);
+return;
+}
+
+const w=visCanvas.width;
+const h=visCanvas.height;
+
+vCtx.clearRect(0,0,w,h);
+
+if(visType.value==="wave"){
+analyser.getByteTimeDomainData(dataArray);
+
+vCtx.beginPath();
+for(let i=0;i<dataArray.length;i++){
+const x=(i/dataArray.length)*w;
+const y=(dataArray[i]/255)*h;
+vCtx.lineTo(x,y);
+}
+vCtx.strokeStyle=visColor.value;
+vCtx.stroke();
+}else{
+analyser.getByteFrequencyData(dataArray);
+const barWidth=w/dataArray.length;
+
+for(let i=0;i<dataArray.length;i++){
+const val=dataArray[i];
+const barH=(val/255)*h;
+vCtx.fillStyle=visColor.value;
+vCtx.fillRect(i*barWidth,h-barH,barWidth,barH);
+}
+}
+
+requestAnimationFrame(drawVisualizer);
+}
+
+requestAnimationFrame(drawVisualizer);
+
+video.onplay=()=>connectSource(video);
+
+document.getElementById("playBtn").onclick=()=>{
+if(!video.src) return;
+isPlaying=true;
+video.play();
 };
-previousFrame = null;
 
-  recorder.start();
+engineLoop();
+/* ================= FULLSCREEN ================= */
 
-// Wait for video to seek properly before playing
-await new Promise(resolve => {
-  video.onseeked = resolve;
-  video.currentTime = 0;
-});
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+const appContainer = document.querySelector(".app-container");
 
-await video.play();
+fullscreenBtn.onclick = () => {
 
-function recordLoop() {
-  if (video.paused || video.ended) {
-    recorder.stop();
-    return;
-  }
-
-  // Always clear full scaled canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (bgToggle.checked) {
-    ctx.drawImage(video, 0, 0);
-  }
-
-  renderEmojiFrame(emojiSize);
-
-  requestAnimationFrame(recordLoop);
-}
-
-
-  recordLoop();
-});
-playBtn.addEventListener("click", async () => {
-  if (!video.src) return alert("Upload a video first!");
-
-  if (!isPlaying) {
-    isPlaying = true;
-    await video.play();
-    previewLoop();
-    playBtn.textContent = "Pause";
+  if (!document.fullscreenElement) {
+    appContainer.requestFullscreen();
   } else {
-    isPlaying = false;
-    video.pause();
-    playBtn.textContent = "Play";
+    document.exitFullscreen();
   }
+
+};
+
+/* when fullscreen changes, fix canvas size */
+document.addEventListener("fullscreenchange", () => {
+
+  if (document.fullscreenElement) {
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - 200; // leave space for controls
+
+  } else {
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+  }
+
 });
+
 </script>
 </body>
 </html>

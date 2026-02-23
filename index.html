@@ -173,7 +173,31 @@ video{display:none;}
 </div>
 
 <script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
+/* ================= RESIZE FIX ================= */
+function resizeCanvasToDisplaySize() {
+
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  const displayWidth  = Math.floor(rect.width  * dpr);
+  const displayHeight = Math.floor(rect.height * dpr);
+
+  if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+    canvas.width  = displayWidth;
+    canvas.height = displayHeight;
+  }
+}
+
+/* ================= RENDER ================= */
+function render() {
+
+  resizeCanvasToDisplaySize();   // 👈 ADD THIS HERE (top of render)
+
+  // rest of your render code...
+}
 /* ================= BASIC ENGINE ================= */
 
 const video=document.getElementById("video");

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Emoji Video Converter</title>
+<style>
+body {
+  background: black;
+  color: white;
+  text-align: center;
+  font-family: monospace;
+}
+canvas {
+  border: 1px solid white;
+  display: block;
+  margin: 0 auto;
+}
+button {
+  padding: 10px;
+  margin: 10px;
+  font-size: 16px;
+}
+video {
+  display: block;
+  margin: 10px auto;
+  max-width: 80%;
+}
+</style>
+</head>
+<body>
+
+<h2>Emoji Video Converter</h2>
+
+<label>Emoji Size: <span id="resLabel">12px</span></label><br>
+<input type="range" id="resSlider" min="6" max="48" step="2" value="12"><br><br>
+
+<label>Emoji Range:</label>
+<select id="emojiMode">
+  <option value="bw">Black & White Squares</option>
+  <option value="ascii">ASCII (95 chars)</option>
+  <option value="full">All Emojis</option>
+</select>
+<br><br>
+
+<label>
+  <input type="checkbox" id="bgToggle" checked> Show Original Video Background
+</label>
+<br><br>
+
+<input type="file" id="videoUpload" accept="video/*"><br>
+<video id="video" controls></video>
+<canvas id="emojiCanvas"></canvas>
+<br>
+<button id="playBtn">Play</button>
+<button id="exportBtn">Export Full Video (HQ)</button>
+<a id="downloadBtn" style="display:none; padding:10px; margin:10px; background:#444; color:white; text-decoration:none;">Download Emoji Video</a>
+<button id="fullscreenBtn">Fullscreen</button>
+<br>
+<progress id="progressBar" value="0" max="100" style="width:80%; display:none;"></progress>
+
+<script>
+const video = document.getElementById("video");
+const upload = document.getElementById("videoUpload");
+const canvas = document.getElementById("emojiCanvas");
+const ctx = canvas.getContext("2d");
+const playBtn = document.getElementById("playBtn");
+const exportBtn = document.getElementById("exportBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+const resSlider = document.getElementById("resSlider");
+const resLabel = document.getElementById("resLabel");
+const emojiMode = document.getElementById("emojiMode");
+const bgToggle = document.getElementById("bgToggle");
+const progressBar = document.getElementById("progressBar");
+
+let mediaRecorder;
+let recordedChunks = [];
+let emojiFrames = [];
+let cachedSettings = {};
+let isPlaying = false;
+
+const ASCII_SET = Array.from({length: 95}, (_, i) => String.fromCharCode(32 + i));
+const BW_SET = ["⬛","⬜"];
+const FULL_SET = [
+...ASCII_SET,
+
+// Blocks & Shapes
+"⬛","⬜","🟥","🟧","🟨","🟩","🟦","🟪",
+"🔴","🟠","🟡","🟢","🔵","🟣",
+"⚫","⚪","🟤","🔶","🔷","🔸","🔹","🔺","🔻",
+"💠","🔘","🔳","🔲",
+
+// Faces (Full Range)
+"😀","😃","😄","😁","😆","😅","😂","🤣","🥲","☺",
+"😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗",
+"😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓",
+"😎","🥸","🤩","🥳","😏","😒","😞","😔","😟","😕",
+"🙁","☹","😣","😖","😫","😩","🥺","😭","😤","😠",
+"😡","🤬","😶","😐","😑","🫠","🫥","🤔","🤭","🫢",
+"🤫","🤥","😬","😴","🥱","😪","😵","🤯","😱","🥵",
+"🥶","😳","🤠","🥴","🤢","🤮","🤧","😷","🤒","🤕",
+
+// Hands & People
+"👍","👎","👏","🙌","👐","🤲","🤝","✌","🤞","🤟",
+"👌","👈","👉","👆","👇","✋","🤚","🖐","🖖",
+"💪","🦾","🦿","🦵","🦶",
+"👶","🧒","👦","👧","🧑","👨","👩","🧔","👴","👵",
+
+// Hearts & Energy
+"❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎",
+"💔","❣","💕","💞","💓","💗","💖","💘","💝",
+"✨","⭐","🌟","💫","🔥","💥","⚡","💢","💨",
+
+// Nature
+"🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘",
+"☀","🌤","⛅","🌥","☁","🌧","⛈","🌩","🌪",
+"🌈","❄","🌊","🌋","🌍","🌎","🌏",
+"🌱","🌲","🌳","🌴","🌵","🌸","🌼","🌻","🌺","🌷",
+
+// Animals
+"🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐻‍❄️","🐨",
+"🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🦅",
+"🦆","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐞","🦋",
+"🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦀","🐡","🐠",
+
+// Food
+"🍎","🍊","🍋","🍌","🍉","🍇","🍓","🍒","🍍","🥭",
+"🍔","🍕","🌭","🍟","🍗","🥓","🍩","🍪","🍫","🍿",
+"🍣","🍜","🍤","🥟","🍦","🍰","🎂","🧁","🥤","☕",
+
+// Objects & Tech
+"📱","💻","⌚","🖥","🖨","🕹","🎮","🎧","📷","📸",
+"🎥","📺","📡","💾","💿","📀","🔋","🔌","💡","🕯",
+"⚙","🛠","🔧","🔨","🧱","🪨","💎","🔒","🔑","🗝",
+
+// Transport
+"🚗","🚕","🚙","🏎","🚓","🚑","🚒","🚜",
+"🚀","✈","🛸","🚁","🚲","🛴","🚂","🚆",
+
+// Games & Fun
+"🎮","🎲","🎯","🎳","🎪","🎭","🎨","🎤","🎧","🥁",
+"🎸","🎹","🎺","🎷","🎻","🎬","🎰","🧩",
+
+// Random Chaos
+"🧠","👁","🦷","🩸","🧬","🧪","🧫","🧯",
+"🧲","🧿","🪬","⚔","🛡","🏆","🥇","🥈","🥉",
+"🎉","🎊","🎁","🎈","🪩"
+];
+const offCanvas = document.createElement("canvas");
+const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
+const sampleCanvas = document.createElement("canvas");
+const sampleCtx = sampleCanvas.getContext("2d", { willReadFrequently: true });
+
+
+upload.addEventListener("change", () => {
+  const file = upload.files[0];
+  if (file) {
+    video.src = URL.createObjectURL(file);
+    video.load();
+    video.onloadedmetadata = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      offCanvas.width = video.videoWidth;
+      offCanvas.height = video.videoHeight;
+    };
+    emojiFrames = [];
+    downloadBtn.style.display = 'none';
+  }
+});
+
+resSlider.addEventListener("input", () => {
+  resLabel.textContent = resSlider.value + "px";
+  emojiFrames = [];
+  previousFrame = null;
+});
+
+emojiMode.addEventListener("change", () => {
+  emojiFrames = [];
+  previousFrame = null;
+});
+bgToggle.addEventListener("change", () => {
+  emojiFrames = [];
+  previousFrame = null;
+});
+
+fullscreenBtn.addEventListener("click", () => {
+  if (!document.fullscreenElement) canvas.requestFullscreen();
+  else document.exitFullscreen();
+});
+
+function getEmojiSet() {
+  if (emojiMode.value === "bw") return BW_SET;
+  if (emojiMode.value === "ascii") return ASCII_SET;
+  return FULL_SET;
+}
+
+
+function renderEmojiFrame(emojiSize) {
+  const width = video.videoWidth;
+  const height = video.videoHeight;
+
+  const cols = Math.floor(width / emojiSize);
+  const rows = Math.floor(height / emojiSize);
+
+  // Resize sample canvas to emoji grid size
+  sampleCanvas.width = cols;
+  sampleCanvas.height = rows;
+
+  // Downscale video frame to tiny canvas
+  sampleCtx.drawImage(video, 0, 0, cols, rows);
+
+  const frame = sampleCtx.getImageData(0, 0, cols, rows).data;
+
+  ctx.font = emojiSize + "px monospace";
+  ctx.textBaseline = "top";
+
+  const EMOJIS = getEmojiSet();
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+
+      const idx = (y * cols + x) * 4;
+
+      const r = frame[idx];
+      const g = frame[idx + 1];
+      const b = frame[idx + 2];
+
+      const brightness = (r + g + b) / 3;
+
+      const drawX = x * emojiSize;
+      const drawY = y * emojiSize;
+
+      if (emojiMode.value === "bw") {
+        if (brightness < 128) {
+          ctx.fillStyle = "black";
+          ctx.fillText("⬛", drawX, drawY);
+        } else {
+          const gray = brightness | 0;
+          ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+          ctx.fillText("⬜", drawX, drawY);
+        }
+      } else {
+        const emojiIdx = Math.min(
+          EMOJIS.length - 1,
+          (brightness * EMOJIS.length / 256) | 0
+        );
+
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillText(EMOJIS[emojiIdx], drawX, drawY);
+      }
+    }
+  }
+}
+function previewLoop() {
+  if (!isPlaying) return;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+if (bgToggle.checked) {
+  ctx.drawImage(video, 0, 0);
+}
+
+
+  renderEmojiFrame(parseInt(resSlider.value));
+  requestAnimationFrame(previewLoop);
+}
+exportBtn.addEventListener("click", async () => {
+  if (!video.src) return alert("Upload a video first!");
+
+  exportBtn.disabled = true;
+  exportBtn.textContent = "Recording...";
+
+  const emojiSize = parseInt(resSlider.value);
+  const SCALE = 2;
+  const FPS = 60;
+
+  const originalWidth = video.videoWidth;
+  const originalHeight = video.videoHeight;
+
+  // Resize canvas for HQ
+  canvas.width = originalWidth * SCALE;
+  canvas.height = originalHeight * SCALE;
+
+  offCanvas.width = originalWidth;
+  offCanvas.height = originalHeight;
+
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+
+  const stream = canvas.captureStream(FPS);
+
+  const recorder = new MediaRecorder(stream, {
+    mimeType: "video/webm",
+    videoBitsPerSecond: 20000000
+  });
+
+  const chunks = [];
+  recorder.ondataavailable = e => {
+    if (e.data.size > 0) chunks.push(e.data);
+  };
+
+ recorder.onstop = () => {
+  const blob = new Blob(chunks, { type: "video/webm" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "emoji-video-HQ.webm";
+  a.click();
+
+  URL.revokeObjectURL(url);
+
+  // FULL reset
+  canvas.width = originalWidth;
+  canvas.height = originalHeight;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+
+  previousFrame = null;
+  isPlaying = false;
+
+  exportBtn.disabled = false;
+  exportBtn.textContent = "Export Full Video (HQ)";
+};
+previousFrame = null;
+
+  recorder.start();
+
+// Wait for video to seek properly before playing
+await new Promise(resolve => {
+  video.onseeked = resolve;
+  video.currentTime = 0;
+});
+
+await video.play();
+
+function recordLoop() {
+  if (video.paused || video.ended) {
+    recorder.stop();
+    return;
+  }
+
+  // Always clear full scaled canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (bgToggle.checked) {
+    ctx.drawImage(video, 0, 0);
+  }
+
+  renderEmojiFrame(emojiSize);
+
+  requestAnimationFrame(recordLoop);
+}
+
+
+  recordLoop();
+});
+playBtn.addEventListener("click", async () => {
+  if (!video.src) return alert("Upload a video first!");
+
+  if (!isPlaying) {
+    isPlaying = true;
+    await video.play();
+    previewLoop();
+    playBtn.textContent = "Pause";
+  } else {
+    isPlaying = false;
+    video.pause();
+    playBtn.textContent = "Play";
+  }
+});
+</script>
+</body>
+</html>

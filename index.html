@@ -173,6 +173,7 @@ video{display:none;}
 </div>
 
 <script>
+const canvas = document.getElementById("emojiCanvas");
 const ctx = canvas.getContext("2d");
 
 /* ================= RESIZE FIX ================= */
@@ -200,8 +201,6 @@ function render() {
 /* ================= BASIC ENGINE ================= */
 
 const video=document.getElementById("video");
-const canvas=document.getElementById("emojiCanvas");
-const ctx=canvas.getContext("2d",{alpha:false});
 const visCanvas=document.getElementById("visualizerCanvas");
 const vCtx=visCanvas.getContext("2d");
 

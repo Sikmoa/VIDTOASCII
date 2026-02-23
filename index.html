@@ -197,21 +197,23 @@ function render() {
   // rest of your render code...
 }
 /* ================= BASIC ENGINE ================= */
+const canvas = document.getElementById("emojiCanvas");
+const ctx = canvas.getContext("2d", { alpha: false });
 
-const video=document.getElementById("video");
-const visCanvas=document.getElementById("visualizerCanvas");
-const vCtx=visCanvas.getContext("2d");
+const video = document.getElementById("video");
+const visCanvas = document.getElementById("visualizerCanvas");
+const vCtx = visCanvas.getContext("2d");
 
-const upload=document.getElementById("videoUpload");
-const resSlider=document.getElementById("resSlider");
-const resLabel=document.getElementById("resLabel");
-const resWarning=document.getElementById("resWarning");
-const emojiMode=document.getElementById("emojiMode");
-const colorProfile=document.getElementById("colorProfile");
+const upload = document.getElementById("videoUpload");
+const resSlider = document.getElementById("resSlider");
+const resLabel = document.getElementById("resLabel");
+const resWarning = document.getElementById("resWarning");
+const emojiMode = document.getElementById("emojiMode");
+const colorProfile = document.getElementById("colorProfile");
 
-let isPlaying=false;
-let lastFrameData=null;
-let currentFontSize=null;
+let isPlaying = false;
+let lastFrameData = null;
+let currentFontSize = null;
 
 /* PERFORMANCE CAPS */
 const MAX_INTERNAL_WIDTH = 480;   // huge performance boost

@@ -181,25 +181,21 @@ function resizeCanvasToDisplaySize(canvas, ctx) {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
 
-  const displayWidth  = Math.floor(rect.width  * dpr);
-  const displayHeight = Math.floor(rect.height * dpr);
+  const displayWidth  = Math.round(rect.width  * dpr);
+  const displayHeight = Math.round(rect.height * dpr);
 
   if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+
     canvas.width  = displayWidth;
     canvas.height = displayHeight;
 
-    // Reset transform before scaling
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
+
+    return true;
   }
-}
 
-/* ================= RENDER ================= */
-function render() {
-
-  resizeCanvasToDisplaySize();   // 👈 ADD THIS HERE (top of render)
-
-  // rest of your render code...
+  return false;
 }
 /* ================= BASIC ENGINE ================= */
 const canvas = document.getElementById("emojiCanvas");
@@ -301,7 +297,7 @@ const cellWidth  = rect.width  / cols;
 const cellHeight = rect.height / rows;
 
 /* font must match cell */
-const fontSize = Math.floor(cellHeight);
+const fontSize = Math.max(8, Math.floor(cellHeight));
 
 if(currentFontSize !== fontSize){
   ctx.font = fontSize + "px monospace";
@@ -310,8 +306,9 @@ if(currentFontSize !== fontSize){
 }
 
 /* clear once */
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
+const rect = canvas.getBoundingClientRect();
+ctx.clearRect(0,0,rect.width,rect.height);
+  
 if(emojiMode.value === "ascii_blur"){
   ctx.globalAlpha = 0.25;
 }
@@ -370,11 +367,16 @@ for(let i=0;i<data.length;i++){
   }
 
   /* color profile */
+  if (rainbowEnabled) {
+  hue += parseInt(document.getElementById("rainbowSpeed").value) * 0.5;
+  ctx.fillStyle = `hsl(${hue % 360},100%,50%)`;
+} else {
   ctx.fillStyle =
     colorProfile.value === "matrix" ? `rgb(0,${bright},0)` :
     colorProfile.value === "cyber"  ? `rgb(${bright},0,${bright*0.6})` :
     colorProfile.value === "mono"   ? `rgb(${bright},${bright},${bright})` :
     `rgb(${r},${g},${b})`;
+}
 
   ctx.fillText(char, x * cellWidth, y * cellHeight);
 }
@@ -503,14 +505,15 @@ warmthGain,mudGain,presenceGain,airGain]
 
 /* Visualizer */
 function drawVisualizer(){
-
+resizeCanvasToDisplaySize(visCanvas, vCtx);
 if(!analyser){
 requestAnimationFrame(drawVisualizer);
 return;
 }
 
-const w=visCanvas.width;
-const h=visCanvas.height;
+const rect = visCanvas.getBoundingClientRect();
+const w = rect.width;
+const h = rect.height;
 
 vCtx.clearRect(0,0,w,h);
 
@@ -544,13 +547,39 @@ requestAnimationFrame(drawVisualizer);
 
 video.onplay=()=>connectSource(video);
 
-document.getElementById("playBtn").onclick=()=>{
-if(!video.src) return;
-isPlaying=true;
-video.play();
-};
+document.getElementById("playBtn").onclick = () => {
 
+  if (!video.src) return;
+
+  if (video.paused) {
+    video.play();
+    isPlaying = true;
+  } else {
+    video.pause();
+    isPlaying = false;
+  }
+
+};
 engineLoop();
+  const audioUpload = document.getElementById("audioUpload");
+
+audioUpload.onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const audio = new Audio(URL.createObjectURL(file));
+  audio.crossOrigin = "anonymous";
+  audio.play();
+
+  connectSource(audio);
+};
+  let rainbowEnabled = false;
+let hue = 0;
+
+document.getElementById("toggleRainbow").onclick = () => {
+  rainbowEnabled = !rainbowEnabled;
+  toggleRainbow.textContent = rainbowEnabled ? "Rainbow ON" : "Rainbow OFF";
+};
 /* ================= FULLSCREEN MODES ================= */
 
 const fullscreenStretchBtn = document.getElementById("fullscreenStretchBtn");
@@ -585,36 +614,29 @@ fullscreenFitBtn.onclick = () => {
 document.addEventListener("fullscreenchange", () => {
 
   if (!document.fullscreenElement) {
-    // Reset when exiting
     canvas.style.width = "100%";
     canvas.style.height = "auto";
+    fullscreenMode = null;
     return;
   }
 
   if (fullscreenMode === "stretch") {
 
-    // 🔴 STRETCH: fill entire screen (can distort)
     canvas.style.width = "100vw";
     canvas.style.height = "100vh";
 
-  }
+  } else if (fullscreenMode === "fit") {
 
-  if (fullscreenMode === "fit") {
-
-    // 🟢 FIT: preserve video aspect ratio
     const videoAspect = video.videoWidth / video.videoHeight;
     const screenAspect = window.innerWidth / window.innerHeight;
 
     if (screenAspect > videoAspect) {
-      // screen wider than video
       canvas.style.height = "100vh";
-      canvas.style.width = "auto";
+      canvas.style.width = `${100 * videoAspect / screenAspect}vw`;
     } else {
-      // screen taller than video
       canvas.style.width = "100vw";
-      canvas.style.height = "auto";
+      canvas.style.height = `${100 * screenAspect / videoAspect}vh`;
     }
-
   }
 
 });

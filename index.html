@@ -210,11 +210,11 @@ const resLabel = document.getElementById("resLabel");
 const resWarning = document.getElementById("resWarning");
 const emojiMode = document.getElementById("emojiMode");
 const colorProfile = document.getElementById("colorProfile");
-
+let currentResolution = parseInt(resSlider.value);
 let isPlaying = false;
 let lastFrameData = null;
 let currentFontSize = null;
-
+let lastVideoTime = -1;
 /* PERFORMANCE CAPS */
 const MAX_INTERNAL_WIDTH = 480;   // huge performance boost
 const TARGET_FPS = 60;
@@ -253,14 +253,14 @@ lastFrameData=null;
 };
 
 /* RESOLUTION */
-resSlider.oninput=()=>{
-resLabel.textContent=resSlider.value+"px";
-resWarning.style.display=resSlider.value<=4?"block":"none";
-lastFrameData=null;
+resSlider.oninput = () => {
+  currentResolution = parseInt(resSlider.value);
+  resLabel.textContent = currentResolution + "px";
+  resWarning.style.display = currentResolution <= 4 ? "block" : "none";
 };
-
 /* ================= RENDER ================= */
-
+if (video.currentTime === lastVideoTime) return;
+lastVideoTime = video.currentTime;
 function render(size){
 if (!video.videoWidth || video.readyState < 2) return;
   resizeCanvasToDisplaySize(canvas, ctx);
@@ -390,7 +390,7 @@ function engineLoop(timestamp){
   if(timestamp-lastTime>FRAME_INTERVAL){
 
     if(isPlaying && !video.paused && !video.ended){
-      render(parseInt(resSlider.value));   // ← CHANGE THIS
+     render(currentResolution);   // ← CHANGE THIS
     }
 
     lastTime=timestamp;

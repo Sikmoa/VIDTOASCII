@@ -531,7 +531,7 @@ function engineLoop(timestamp){
   if(timestamp-lastTime>FRAME_INTERVAL){
 
     if(isPlaying && !video.paused && !video.ended){
-      renderWebGL();   // ← CHANGE THIS
+      render(parseInt(resSlider.value));   // ← CHANGE THIS
     }
 
     lastTime=timestamp;

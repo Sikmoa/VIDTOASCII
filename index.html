@@ -118,7 +118,8 @@ video{display:none;}
 
 <button id="playBtn">RUN_ENGINE</button>
 <button id="exportBtn">EXPORT</button>
-<button id="fullscreenBtn">FULLSCREEN</button>
+<button id="fullscreenStretchBtn">FULLSCREEN STRETCH</button>
+<button id="fullscreenFitBtn">FULLSCREEN FIT</button>
 
 </div>
 
@@ -550,33 +551,69 @@ video.play();
 };
 
 engineLoop();
-/* ================= FULLSCREEN ================= */
+/* ================= FULLSCREEN MODES ================= */
 
-const fullscreenBtn = document.getElementById("fullscreenBtn");
+const fullscreenStretchBtn = document.getElementById("fullscreenStretchBtn");
+const fullscreenFitBtn = document.getElementById("fullscreenFitBtn");
 const appContainer = document.querySelector(".app-container");
 
-fullscreenBtn.onclick = () => {
+let fullscreenMode = null;
+
+/* ===== STRETCH MODE (your original behavior) ===== */
+fullscreenStretchBtn.onclick = () => {
+
+  fullscreenMode = "stretch";
 
   if (!document.fullscreenElement) {
     appContainer.requestFullscreen();
   } else {
     document.exitFullscreen();
   }
-
 };
 
-/* when fullscreen changes, fix canvas size */
+/* ===== FIT MODE (new fixed fullscreen) ===== */
+fullscreenFitBtn.onclick = () => {
+
+  fullscreenMode = "fit";
+
+  if (!document.fullscreenElement) {
+    appContainer.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+};
 document.addEventListener("fullscreenchange", () => {
 
-  if (document.fullscreenElement) {
+  if (!document.fullscreenElement) {
+    // Reset when exiting
+    canvas.style.width = "100%";
+    canvas.style.height = "auto";
+    return;
+  }
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - 200; // leave space for controls
+  if (fullscreenMode === "stretch") {
 
-  } else {
+    // 🔴 STRETCH: fill entire screen (can distort)
+    canvas.style.width = "100vw";
+    canvas.style.height = "100vh";
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+  }
+
+  if (fullscreenMode === "fit") {
+
+    // 🟢 FIT: preserve video aspect ratio
+    const videoAspect = video.videoWidth / video.videoHeight;
+    const screenAspect = window.innerWidth / window.innerHeight;
+
+    if (screenAspect > videoAspect) {
+      // screen wider than video
+      canvas.style.height = "100vh";
+      canvas.style.width = "auto";
+    } else {
+      // screen taller than video
+      canvas.style.width = "100vw";
+      canvas.style.height = "auto";
+    }
 
   }
 

@@ -175,7 +175,7 @@ video{display:none;}
 <script>
 
 /* ================= RESIZE FIX ================= */
-function resizeCanvasToDisplaySize() {
+function resizeCanvasToDisplaySize(canvas, ctx) {
 
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
@@ -186,6 +186,10 @@ function resizeCanvasToDisplaySize() {
   if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
     canvas.width  = displayWidth;
     canvas.height = displayHeight;
+
+    // Reset transform before scaling
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
   }
 }
 
@@ -263,12 +267,7 @@ lastFrameData=null;
 
 function render(size){
 
-if(!video.videoWidth) return;
-
-/* protect heavy mode */
-if(size <= 6 && emojiMode.value === "full"){
-  emojiMode.value = "ascii";
-}
+  resizeCanvasToDisplaySize(canvas, ctx);
 
 /* calculate internal scale */
 const scale = Math.min(1, MAX_INTERNAL_WIDTH / video.videoWidth);
@@ -295,8 +294,10 @@ const data = new Uint32Array(imageData.data.buffer);
 /* ===== MODE + SCALING FIX ===== */
 
 /* how much grid maps to canvas */
-const cellWidth  = canvas.clientWidth  / cols;
-const cellHeight = canvas.clientHeight / rows;
+const rect = canvas.getBoundingClientRect();
+
+const cellWidth  = rect.width  / cols;
+const cellHeight = rect.height / rows;
 
 /* font must match cell */
 const fontSize = Math.floor(cellHeight);

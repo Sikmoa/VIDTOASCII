@@ -263,7 +263,7 @@ lastFrameData=null;
 /* ================= RENDER ================= */
 
 function render(size){
-
+if (!video.videoWidth || video.readyState < 2) return;
   resizeCanvasToDisplaySize(canvas, ctx);
 
 /* calculate internal scale */
@@ -275,7 +275,7 @@ const internalHeight = Math.floor(video.videoHeight * scale);
 /* number of cells */
 const cols = Math.floor(internalWidth / size);
 const rows = Math.floor(internalHeight / size);
-
+if (cols <= 0 || rows <= 0) return;
 /* resize offscreen to grid size */
 if(offCanvas.width !== cols || offCanvas.height !== rows){
   offCanvas.width = cols;
@@ -306,8 +306,7 @@ if(currentFontSize !== fontSize){
 }
 
 /* clear once */
-const rect = canvas.getBoundingClientRect();
-ctx.clearRect(0,0,rect.width,rect.height);
+ctx.clearRect(0, 0, rect.width, rect.height);
   
 if(emojiMode.value === "ascii_blur"){
   ctx.globalAlpha = 0.25;
@@ -560,7 +559,7 @@ document.getElementById("playBtn").onclick = () => {
   }
 
 };
-engineLoop();
+requestAnimationFrame(engineLoop);
   const audioUpload = document.getElementById("audioUpload");
 
 audioUpload.onchange = e => {
@@ -576,9 +575,11 @@ audioUpload.onchange = e => {
   let rainbowEnabled = false;
 let hue = 0;
 
-document.getElementById("toggleRainbow").onclick = () => {
+const toggleRainbowBtn = document.getElementById("toggleRainbow");
+
+toggleRainbowBtn.onclick = () => {
   rainbowEnabled = !rainbowEnabled;
-  toggleRainbow.textContent = rainbowEnabled ? "Rainbow ON" : "Rainbow OFF";
+  toggleRainbowBtn.textContent = rainbowEnabled ? "Rainbow ON" : "Rainbow OFF";
 };
 /* ================= FULLSCREEN MODES ================= */
 
